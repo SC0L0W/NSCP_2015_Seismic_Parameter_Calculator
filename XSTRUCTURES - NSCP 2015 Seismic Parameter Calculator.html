@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NSCP 2015 Seismic Parameter Calculator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .main-container {
+            max-width: none;
+            width: 100%;
+            padding-left: 20px;
+            padding-right: 20px;
+        }
+
+        .ui.header.center.aligned {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .ui.header h1 {
+            color: #2c3e50;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .ui.header p {
+            color: #7f8c8d;
+            font-size: 1.2em;
+            font-weight: 300;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 350px 1fr 400px;
+            gap: 25px;
+            height: calc(100vh - 200px);
+        }
+
+        .section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            overflow-y: auto;
+        }
+
+        .section h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.4em;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+            background: rgba(52, 152, 219, 0.05);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #3498db;
+        }
+
+        .input-group h4 {
+            color: #2980b9;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .field {
+            margin-bottom: 1em;
+        }
+
+        .field label {
+            display: block;
+            margin-bottom: 0.3em;
+            color: #34495e;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+        .field input, .field select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e6ed;
+            border-radius: 8px;
+            font-size: 15px;
+            line-height: 1.6;
+            height: auto;
+            min-height: 44px;
+            background: white;
+            box-sizing: border-box;
+            overflow: visible;
+            display: block;
+            white-space: normal;
+        }
+
+        .field input:focus, .field select:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+            transform: translateY(-1px);
+        }
+        .field select option {
+            white-space: normal;
+        }
+        .info-icon {
+            display: inline-block;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1em;
+            background-color: #3498db;
+            color: #fff;
+            width: 20px;
+            height: 20px;
+            text-align: center;
+            line-height: 20px;
+            border-radius: 50%;
+            transition: background-color 0.3s ease;
+        }
+        .field-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between; /* optional: keeps items apart */
+            gap: 8px; /* spacing between label and icon */
+            margin-bottom: 0.5em;
+        }
+        .field-header label {
+            font-weight: 600;
+            font-size: 0.95em;
+            color: #34495e;
+            margin: 0;
+        }
+        .info-icon:hover {
+            background-color: #0056b3;
+            transform: scale(1.1);
+        }
+        
+        .info-icon:active {
+            transform: scale(0.95);
+        }
+        
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        }
+        .calculate-btn {
+            width: 100%;
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .calculate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(52, 152, 219, 0.4);
+            background: linear-gradient(45deg, #2980b9, #3498db);
+        }
+
+        #visualization {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 10px;
+            position: relative;
+            height: 500px;
+            border: 2px solid #e0e6ed;
+            overflow: hidden;
+        }
+
+        .controls-overlay {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            z-index: 100;
+            display: flex;
+            gap: 10px;
+        }
+
+        .control-btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-btn:hover {
+            background: #3498db;
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .beam-stats {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 12px;
+            max-width: 200px;
+        }
+
+        #calculationResults {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .result-group {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 10px;
+            border-left: 4px solid #27ae60;
+        }
+
+        .result-group h4 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #e1ede4;
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+        }
+
+        .result-label {
+            color: #555;
+            font-weight: 500;
+        }
+
+        .result-value {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 5px;
+            background: #ecf0f1;
+            color: #2c3e50;
+        }
+
+       .status-safe {
+            background: #d5f4e6;
+            color: #27ae60;
+        }
+
+        .status-warning {
+            background: #fef9e7;
+            color: #f39c12;
+        }
+
+        .status-danger {
+            background: #fadbd8;
+            color: #e74c3c;
+        }
+
+        .copy-success {
+            background: #2ecc71 !important;
+            color: white !important;
+        }
+
+        .info-tooltip {
+            position: relative;
+            display: inline-block;
+            margin-left: 5px;
+            cursor: help;
+        }
+
+        .info-tooltip::after {
+            content: "ℹ️";
+            font-size: 0.8rem;
+        }
+
+        .info-tooltip:hover {
+            color: #3498db;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .layout {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+            
+            .main-container {
+                padding: 10px;
+            }
+            
+            .section {
+                margin-bottom: 20px;
+            }
+            
+            .ui.header h1 {
+                font-size: 2em;
+            }
+            
+            .ui.header p {
+                font-size: 1em;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 5px;
+            }
+            
+            .ui.header.center.aligned {
+                padding: 20px;
+                margin-bottom: 20px;
+            }
+            
+            .ui.header h1 {
+                font-size: 1.8em;
+            }
+            
+            .section {
+                padding: 15px;
+            }
+            
+            .input-group {
+                padding: 15px;
+                margin-bottom: 20px;
+            }
+            
+            
+            .controls-overlay {
+                top: 10px;
+                right: 10px;
+            }
+            
+            .control-btn {
+                width: 35px;
+                height: 35px;
+            }
+            
+            .beam-stats {
+                bottom: 10px;
+                left: 10px;
+                font-size: 11px;
+            }
+        }
+
+        /* Additional utility classes */
+        .text-center {
+            text-align: center;
+        }
+
+        .text-left {
+            text-align: left;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .mb-10 {
+            margin-bottom: 10px;
+        }
+
+        .mb-15 {
+            margin-bottom: 15px;
+        }
+
+        .mb-20 {
+            margin-bottom: 20px;
+        }
+
+        .mt-10 {
+            margin-top: 10px;
+        }
+
+        .mt-15 {
+            margin-top: 15px;
+        }
+
+        .mt-20 {
+            margin-top: 20px;
+        }
+
+        #structureType {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            line-height: 1.5;
+            height: auto;
+            box-sizing: border-box;
+        }
+
+        #structureType option {
+            white-space: normal;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        /* Animation classes */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(52, 152, 219, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(52, 152, 219, 0);
+            }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div style="width: 100vw; height: 100vh; margin: 0; padding: 20; overflow: auto;">
+        <div class="main-container" style="max-width: none; width: 100%; padding: 0 20px;"></div>
+            <div class="ui header center aligned">
+                <h1>XSTRUCTURES - NSCP 2015 Seismic Parameter Calculator</h1>
+                <p>Design Response Spectra and Base Shear Analysis Tool</p>
+            </div>
+
+            <div class="layout">
+                <!-- Input Parameters Section -->
+                <div class="section">
+                    <h3>Input Parameters</h3>
+                    
+                    <div class="input-group">
+                        <h4>Seismic Zone Information</h4>
+                        <div class="field">
+                            <label>Seismic Zone Factor (Z)</label>
+                            <select id="seismicZone">
+                                <option value="0.2">Zone 2 (Z = 0.2)</option>
+                                <option value="0.4" selected>Zone 4 (Z = 0.4)</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label>Seismic Source Type</label>
+                            <select id="seismicSourceType">
+                                <option value="A" selected>Type A</option>
+                                <option value="B">Type B</option>
+                                <option value="C">Type C</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <div class="field-header">
+                                <label>Distance to Nearest Fault (km)</label>
+                                <a href="https://hazardhunter.georisk.gov.ph/map" 
+                                    target="_blank" 
+                                    class="info-icon" 
+                                    title="View HazardHunter Map">i</a>
+                            </div>
+                            <input type="number" id="distanceToFault" value="10" step="0.1" min="0">
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <h4>Site Conditions</h4>
+                        <div class="field">
+                            <label>Soil Profile Type</label>
+                            <select id="soilProfileType">
+                                <option value="SA">SA - Hard Rock</option>
+                                <option value="SB">SB - Rock</option>
+                                <option value="SC">SC - Very Dense Soil</option>
+                                <option value="SD" selected>SD - Stiff Soil</option>
+                                <option value="SE">SE - Soft Clay</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <h4>Structure Properties</h4>
+                        <div class="field">
+                            <label>Importance Factor (I)</label>
+                            <input type="number" id="importanceFactor" value="1.0" step="0.1" min="0.1">
+                        </div>
+                        <div class="field">
+                            <label>Response Modification Factor Rx</label>
+                            <input type="number" id="responseFactorX" value="8.5" step="0.1" min="1">
+                        </div>
+                        <div class="field">
+                            <label>Response Modification Factor Rz</label>
+                            <input type="number" id="responseFactorZ" value="8.5" step="0.1" min="1">
+                        </div>
+                        <div class="field">
+                            <label>Building Frame System (Ct Value)</label>
+                            <select id="structureType">
+                                <option value="0.0853">Moment-Resisting Frame (Ct = 0.0853)</option>
+                                <option value="0.0731">Eccentrically Braced Frame (Ct = 0.0731)</option>
+                                <option value="0.0488">All Other Buildings (Ct = 0.0488)</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label>Height (m)</label>
+                            <input type="number" id="structureHeight" value="10" step="0.1" min="0">
+                        </div>
+                        <div class="field">
+                            <label>Seismic Dead Load W (kN)</label>
+                            <input type="number" id="seismicDeadLoad" value="1000" step="0.01" min="0">
+                        </div>
+                        <div class="field">
+                            <label>Period Interval for Table (s)</label>
+                            <input type="number" id="periodInterval" value="0.2" step="0.1" min="0.1" max="1.0">
+                        </div>
+                    </div>
+
+                    <button class="calculate-btn" onclick="calculateParameters()">Calculate Parameters</button>
+                </div>
+
+                <!-- Visualization Section -->
+                <div class="section">
+                    <h3>Design Response Spectra</h3>
+                    <div id="visualization">
+                        <canvas id="responseSpectraChart"></canvas>
+                        <div class="beam-stats" id="spectraStats">
+                            <div>T₀ = 0.155 s</div>
+                            <div>Tₛ = 0.776 s</div>
+                            <div>2.5Cₐ = 1.331</div>
+                            <div>Cᵥ/T = Variable</div>
+                        </div>
+                    </div>
+                    
+                    <div class="cross-section-container">
+                        <h4 style="color: #2c3e50; margin-bottom: 15px;">Response Spectra Table</h4>
+                        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                            <button class="control-btn" onclick="copySpectraTable()" title="Copy Table" id="copyBtn">📋</button>
+                            <span style="color: #7f8c8d; font-size: 12px; align-self: center;">Click to copy table data</span>
+                        </div>
+                        <div id="spectraTable" style="max-height: 300px; overflow-y: auto; background: white; border: 1px solid #e0e6ed; border-radius: 5px; padding: 10px;">
+                            <!-- Table will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Section -->
+                <div class="section">
+                    <h3>📋 Calculation Results</h3>
+                    <div id="calculationResults">
+                        <!-- Near Source Factors -->
+                        <div class="result-group">
+                            <h4>🎯 Near Source Factors</h4>
+                            <div class="result-item">
+                                <span class="result-label">Nₐ (Near Source Factor) <span class="info-tooltip" title="Near-source acceleration factor"></span></span>
+                                <span class="result-value" id="naValue">1.00</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Nᵥ (Near Source Factor) <span class="info-tooltip" title="Near-source velocity factor"></span></span>
+                                <span class="result-value" id="nvValue">1.20</span>
+                            </div>
+                        </div>
+
+                        <!-- Seismic Coefficients -->
+                        <div class="result-group">
+                            <h4>⚡ Seismic Coefficients</h4>
+                            <div class="result-item">
+                                <span class="result-label">Cₐ (Seismic Coefficient) <span class="info-tooltip" title="Seismic coefficient for short periods"></span></span>
+                                <span class="result-value" id="caValue">0.44</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Cᵥ (Seismic Coefficient) <span class="info-tooltip" title="Seismic coefficient for 1-second period"></span></span>
+                                <span class="result-value" id="cvValue">0.758</span>
+                            </div>
+                        </div>
+
+                        <!-- Response Spectra Parameters -->
+                        <div class="result-group">
+                            <h4>📊 Response Spectra Parameters</h4>
+                            <div class="result-item">
+                                <span class="result-label">2.5Cₐ (Maximum Response) <span class="info-tooltip" title="Maximum spectral response acceleration"></span></span>
+                                <span class="result-value" id="spectraMax">1.100</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">T₀ (Short Period) <span class="info-tooltip" title="Transition period to constant acceleration"></span></span>
+                                <span class="result-value" id="t0Value">0.088</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Tₛ (Long Period) <span class="info-tooltip" title="Transition period to constant velocity"></span></span>
+                                <span class="result-value" id="tsValue">0.550</span>
+                            </div>
+                        </div>
+
+                        <!-- Structure Period -->
+                        <div class="result-group">
+                            <h4>⏱️ Structure Period Analysis</h4>
+                            <div class="result-item">
+                                <span class="result-label">Ct Value <span class="info-tooltip" title="Building period coefficient"></span></span>
+                                <span class="result-value" id="ctValue">0.0853</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Method A - Tₓ (s) <span class="info-tooltip" title="Approximate fundamental period X-direction"></span></span>
+                                <span class="result-value" id="txMethodA">0.591</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Method B - Tₓ (s) <span class="info-tooltip" title="Upper limit period X-direction"></span></span>
+                                <span class="result-value" id="txMethodB">0.710</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Governing Tₓ (s) <span class="info-tooltip" title="Design period X-direction"></span></span>
+                                <span class="result-value status-safe" id="txGoverning">0.591</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Method A - Tz (s) <span class="info-tooltip" title="Approximate fundamental period Z-direction"></span></span>
+                                <span class="result-value" id="tzMethodA">0.591</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Method B - Tz (s) <span class="info-tooltip" title="Upper limit period Z-direction"></span></span>
+                                <span class="result-value" id="tzMethodB">0.710</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Governing Tz (s) <span class="info-tooltip" title="Design period Z-direction"></span></span>
+                                <span class="result-value status-safe" id="tzGoverning">0.591</span>
+                            </div>
+                        </div>
+
+                        <!-- Base Shear Analysis -->
+                        <div class="result-group">
+                            <h4>🏗️ Base Shear Analysis</h4>
+                            <div class="result-item">
+                                <span class="result-label">Vₓ - Base Shear X (kN) <span class="info-tooltip" title="Design base shear X-direction"></span></span>
+                                <span class="result-value status-danger" id="vxValue">2571.32</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Vₓ - Upper Limit (kN) <span class="info-tooltip" title="Maximum allowable base shear X-direction"></span></span>
+                                <span class="result-value status-safe" id="vxUpperValue">2362.77</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Vₓ - Lower Limit (kN) <span class="info-tooltip" title="Minimum required base shear X-direction"></span></span>
+                                <span class="result-value" id="vxLowerValue">623.77</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Vz - Base Shear Z (kN) <span class="info-tooltip" title="Design base shear Z-direction"></span></span>
+                                <span class="result-value status-danger" id="vzValue">1956.31</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Vz - Upper Limit (kN) <span class="info-tooltip" title="Maximum allowable base shear Z-direction"></span></span>
+                                <span class="result-value status-safe" id="vzUpperValue">1772.08</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Vz - Lower Limit (kN) <span class="info-tooltip" title="Minimum required base shear Z-direction"></span></span>
+                                <span class="result-value" id="vzLowerValue">623.77</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let spectraChart = null;
+
+        // Near Source Factor Tables (NSCP 2015)
+        const nearSourceFactors = {
+            Na: {
+                A: { 2: 1.5, 5: 1.2, 10: 1.0, 15: 1.0 },
+                B: { 2: 1.3, 5: 1.0, 10: 1.0, 15: 1.0 },
+                C: { 2: 1.0, 5: 1.0, 10: 1.0, 15: 1.0 }
+            },
+            Nv: {
+                A: { 2: 2.0, 5: 1.6, 10: 1.2, 15: 1.0 },
+                B: { 2: 1.6, 5: 1.2, 10: 1.0, 15: 1.0 },
+                C: { 2: 1.0, 5: 1.0, 10: 1.0, 15: 1.0 }
+            }
+        };
+
+        // Updated Seismic Coefficient Tables (NSCP 2015 Table 208-7 & 208-8)
+        const seismicCoefficients = {
+            Ca: {
+                SA: { 0.2: 0.16, 0.4: 0.32 },
+                SB: { 0.2: 0.20, 0.4: 0.40 },
+                SC: { 0.2: 0.24, 0.4: 0.40 },
+                SD: { 0.2: 0.28, 0.4: 0.44 },
+                SE: { 0.2: 0.34, 0.4: 0.44 }
+            },
+            Cv: {
+                SA: { 0.2: 0.16, 0.4: 0.32 },
+                SB: { 0.2: 0.20, 0.4: 0.40 },
+                SC: { 0.2: 0.32, 0.4: 0.56 },
+                SD: { 0.2: 0.40, 0.4: 0.64 },
+                SE: { 0.2: 0.64, 0.4: 0.96 }
+            }
+        };
+
+        function interpolateNearSourceFactor(sourceType, distance, factorType) {
+            const table = nearSourceFactors[factorType][sourceType];
+            const distances = [2, 5, 10, 15];
+            
+            if (distance <= 2) return table[2];
+            if (distance >= 15) return table[15];
+            
+            for (let i = 0; i < distances.length - 1; i++) {
+                if (distance >= distances[i] && distance <= distances[i + 1]) {
+                    const x1 = distances[i];
+                    const x2 = distances[i + 1];
+                    const y1 = table[x1];
+                    const y2 = table[x2];
+                    return y1 + (y2 - y1) * (distance - x1) / (x2 - x1);
+                }
+            }
+            return table[10];
+        }
+
+        function calculateSeismicCoefficient(soilType, Z, Na, Nv, coeffType) {
+            const table = seismicCoefficients[coeffType][soilType];
+            if (!table) return coeffType === 'Ca' ? 0.22 : 0.40; // Default values
+            
+            // Get base value from zone factor
+            let baseValue = table[Z] || table[0.4];
+            
+            // Apply near source factor
+            if (coeffType === 'Ca') {
+                return baseValue * Na;
+            } else {
+                return baseValue * Nv;
+            }
+        }
+
+        function generateSpectraTable(Ca, Cv, T0, Ts, interval) {
+            const tableContainer = document.getElementById('spectraTable');
+            let tableHTML = '<table style="width: 100%; border-collapse: collapse; font-family: monospace; font-size: 12px;">';
+            tableHTML += '<thead><tr style="background: #f8f9fa;"><th style="border: 1px solid #ddd; padding: 8px;">Period (s)</th><th style="border: 1px solid #ddd; padding: 8px;">Acceleration Sa</th></tr></thead><tbody>';
+
+            // Store data for copying
+            window.spectraData = [];
+
+            // Calculate T0 and Ts based on the given relationships
+            const Ts_calc = Cv / (2.5 * Ca);
+            const T0_calc = 0.2 * Ts_calc;
+            const decayExponent = 0.8; // Controls decay steepness
+
+            // Generate the first 4 periods explicitly
+            const periods = [];
+
+            // 1st period: 0
+            periods.push(0);
+
+            // 2nd period: T0 = 0.2 * TS
+            periods.push(parseFloat(T0_calc.toFixed(3)));
+
+            // 3rd period: TS
+            periods.push(parseFloat(Ts_calc.toFixed(3)));
+
+            // 4th period: TS + interval, rounded to nearest multiple of interval
+            let T4 = Ts_calc + interval;
+            T4 = Math.round(T4 / interval) * interval;
+            periods.push(parseFloat(T4.toFixed(3)));
+
+            // Add further periods from T4 + interval onwards
+            const maxPeriod = 8.0;
+            for (let T = T4 + interval; T <= maxPeriod; T += interval) {
+                T = Math.round(T / interval) * interval;
+                periods.push(parseFloat(T.toFixed(3)));
+            }
+
+            // Remove duplicates and sort
+            const uniquePeriods = [...new Set(periods)].sort((a, b) => a - b);
+
+            // Generate acceleration values with correct NSCP 2015 curve
+            uniquePeriods.forEach(T => {
+                let Sa;
+                if (T === 0) {
+                    Sa = Ca; // Starting value at T=0
+                } else if (T <= T0_calc) {
+                    // Linear rise to peak value at T0
+                    Sa = Ca + (2.5 * Ca - Ca) * (T / T0_calc);
+                } else if (T <= Ts_calc) {
+                    // Constant plateau at 2.5*Ca from T0 to Ts
+                    Sa = 2.5 * Ca;
+                } else {
+                    // Power decay after Ts
+                    Sa = (2.5 * Ca) * Math.pow(Ts_calc / T, decayExponent);
+                }
+
+                // Ensure minimum value
+                Sa = Math.max(Sa, 0.01);
+
+                const saValue = parseFloat(Sa.toFixed(3));
+                window.spectraData.push(`${T.toFixed(3)}\t${saValue.toFixed(3)}`);
+
+                tableHTML += `<tr>
+                    <td style="border: 1px solid #ddd; padding: 6px; text-align: center;">${T.toFixed(3)}</td>
+                    <td style="border: 1px solid #ddd; padding: 6px; text-align: center;">${saValue.toFixed(3)}</td>
+                </tr>`;
+            });
+
+            tableHTML += '</tbody></table>';
+            tableContainer.innerHTML = tableHTML;
+        }
+        function copySpectraTable() {
+            if (window.spectraData && window.spectraData.length > 0) {
+                const tableText = window.spectraData.join('\n');
+                
+                navigator.clipboard.writeText(tableText).then(() => {
+                    const copyBtn = document.getElementById('copyBtn');
+                    copyBtn.classList.add('copy-success');
+                    copyBtn.textContent = '✓';
+                    setTimeout(() => {
+                        copyBtn.classList.remove('copy-success');
+                        copyBtn.textContent = '📋';
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Failed to copy: ', err);
+                    // Fallback for older browsers
+                    const textArea = document.createElement('textarea');
+                    textArea.value = tableText;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    
+                    const copyBtn = document.getElementById('copyBtn');
+                    copyBtn.classList.add('copy-success');
+                    copyBtn.textContent = '✓';
+                    setTimeout(() => {
+                        copyBtn.classList.remove('copy-success');
+                        copyBtn.textContent = '📋';
+                    }, 2000);
+                });
+            }
+        }
+
+        function calculateParameters() {
+            const Z = parseFloat(document.getElementById('seismicZone').value);
+            const sourceType = document.getElementById('seismicSourceType').value;
+            const distance = parseFloat(document.getElementById('distanceToFault').value);
+            const soilType = document.getElementById('soilProfileType').value;
+            const I = parseFloat(document.getElementById('importanceFactor').value);
+            const Rx = parseFloat(document.getElementById('responseFactorX').value);
+            const Rz = parseFloat(document.getElementById('responseFactorZ').value);
+            const Ct = parseFloat(document.getElementById('structureType').value);
+            const height = parseFloat(document.getElementById('structureHeight').value);
+            const W = parseFloat(document.getElementById('seismicDeadLoad').value);
+            const periodInterval = parseFloat(document.getElementById('periodInterval').value);
+
+            // Calculate Near Source Factors
+            const Na = interpolateNearSourceFactor(sourceType, distance, 'Na');
+            const Nv = interpolateNearSourceFactor(sourceType, distance, 'Nv');
+
+            // Calculate Seismic Coefficients using NSCP 2015 method
+            const Ca = calculateSeismicCoefficient(soilType, Z, Na, Nv, 'Ca');
+            const Cv = calculateSeismicCoefficient(soilType, Z, Na, Nv, 'Cv');
+
+            // Calculate Response Spectra Parameters
+            const spectraMax = 2.5 * Ca;
+            const T0 = 0.2 * Cv / spectraMax;
+            const Ts = Cv / spectraMax;
+
+            // Calculate Structure Period
+            // Method A - Empirical Formula (Equation 208-12)
+            const TxMethodA = Ct * Math.pow(height, 0.75);
+            const TzMethodA = TxMethodA; // Same for both directions
+
+            // Method B - Upper Limit (Equation 208-14)
+            const TxMethodB = 1.2 * TxMethodA; // Upper limit is 1.2 times Method A
+            const TzMethodB = 1.2 * TzMethodA;
+
+            // Governing periods (use the smaller value - Method A is more conservative)
+            const TxGoverning = Math.min(TxMethodA, TxMethodB);
+            const TzGoverning = Math.min(TzMethodA, TzMethodB);
+
+            // Calculate Base Shear using governing periods
+            const Vx_basic = (Z * I * Ca * W) / Rx;
+            const Vx_upper = (2.5 * Ca * I * W) / Rx;
+            const Vx_lower = 0.11 * Ca * I * W;
+            const Vx_cv = (Cv * I * W) / (Rx * TxGoverning);
+
+            // Apply limits for Vx
+            let Vx = Math.min(Vx_basic, Vx_upper);
+            Vx = Math.max(Vx, Vx_lower);
+            if (TxGoverning > 0.7) {
+                Vx = Math.min(Vx, Vx_cv);
+            }
+
+            const Vz_basic = (Z * I * Ca * W) / Rz;
+            const Vz_upper = (2.5 * Ca * I * W) / Rz;
+            const Vz_lower = 0.11 * Ca * I * W;
+            const Vz_cv = (Cv * I * W) / (Rz * TzGoverning);
+
+            // Apply limits for Vz
+            let Vz = Math.min(Vz_basic, Vz_upper);
+            Vz = Math.max(Vz, Vz_lower);
+            if (TzGoverning > 0.7) {
+                Vz = Math.min(Vz, Vz_cv);
+            }
+
+            // Update display values
+            document.getElementById('naValue').textContent = Na.toFixed(2);
+            document.getElementById('nvValue').textContent = Nv.toFixed(2);
+            document.getElementById('caValue').textContent = Ca.toFixed(3);
+            document.getElementById('cvValue').textContent = Cv.toFixed(3);
+            document.getElementById('spectraMax').textContent = spectraMax.toFixed(3);
+            document.getElementById('t0Value').textContent = T0.toFixed(3);
+            document.getElementById('tsValue').textContent = Ts.toFixed(3);
+            document.getElementById('ctValue').textContent = Ct.toFixed(4);
+            document.getElementById('txMethodA').textContent = TxMethodA.toFixed(3);
+            document.getElementById('txMethodB').textContent = TxMethodB.toFixed(3);
+            document.getElementById('txGoverning').textContent = TxGoverning.toFixed(3);
+            document.getElementById('tzMethodA').textContent = TzMethodA.toFixed(3);
+            document.getElementById('tzMethodB').textContent = TzMethodB.toFixed(3);
+            document.getElementById('tzGoverning').textContent = TzGoverning.toFixed(3);
+            document.getElementById('vxValue').textContent = Vx.toFixed(2);
+            document.getElementById('vxUpperValue').textContent = Vx_upper.toFixed(2);
+            document.getElementById('vxLowerValue').textContent = Vx_lower.toFixed(2);
+            document.getElementById('vzValue').textContent = Vz.toFixed(2);
+            document.getElementById('vzUpperValue').textContent = Vz_upper.toFixed(2);
+            document.getElementById('vzLowerValue').textContent = Vz_lower.toFixed(2);
+
+            // Update spectra stats
+            document.getElementById('spectraStats').innerHTML = `
+                <div>T₀ = ${T0.toFixed(3)} s</div>
+                <div>Tₛ = ${Ts.toFixed(3)} s</div>
+                <div>2.5Cₐ = ${spectraMax.toFixed(3)}</div>
+                <div>Cᵥ/T = Variable</div>
+            `;
+
+            // Generate spectra table with continuous decay
+            generateSpectraTable(Ca, Cv, T0, Ts, periodInterval);
+
+            // Update chart with continuous decay curve
+            updateSpectraChart(Ca, Cv, T0, Ts, TxGoverning, TzGoverning);
+        }
+
+        function updateSpectraChart(Ca, Cv, T0, Ts, Tx, Tz) {
+            const ctx = document.getElementById('responseSpectraChart').getContext('2d');
+            
+            // Calculate parameters for continuous decay curve
+            const Ts_calc = Cv / (2.5 * Ca);
+            const T0_calc = 0.2 * Ts_calc;
+            const decayExponent = 0.8;
+            
+            // Generate data points for smooth continuous decay curve
+            const periods = [];
+            const accelerations = [];
+            
+            // Generate periods from 0 to 5 seconds with correct NSCP 2015 curve
+            for (let T = 0; T <= 5; T += 0.01) {
+                periods.push(T);
+                let Sa;
+                
+                if (T === 0) {
+                    Sa = Ca; // Starting value
+                } else if (T <= T0_calc) {
+                    // Linear rise to peak at T0
+                    Sa = Ca + (2.5 * Ca - Ca) * (T / T0_calc);
+                } else if (T <= Ts_calc) {
+                    // Constant plateau at 2.5*Ca from T0 to Ts
+                    Sa = 2.5 * Ca;
+                } else {
+                    // Power decay after Ts
+                    Sa = (2.5 * Ca) * Math.pow(Ts_calc / T, decayExponent);
+                }
+                
+                // Ensure minimum value
+                Sa = Math.max(Sa, 0.01);
+                accelerations.push(Sa);
+            }
+
+            // Calculate Sa values for structure periods using correct NSCP 2015 logic
+            const calculateSa = (T) => {
+                if (T === 0) {
+                    return Ca;
+                } else if (T <= T0_calc) {
+                    return Ca + (2.5 * Ca - Ca) * (T / T0_calc);
+                } else if (T <= Ts_calc) {
+                    return 2.5 * Ca; // Constant plateau from T0 to Ts
+                } else {
+                    return Math.max((2.5 * Ca) * Math.pow(Ts_calc / T, decayExponent), 0.01);
+                }
+            };
+
+            // Structure period points
+            const structurePeriods = [
+                { x: Tx, y: calculateSa(Tx), label: 'Tx' },
+                { x: Tz, y: calculateSa(Tz), label: 'Tz' }
+            ];
+
+            if (window.spectraChart) {
+                window.spectraChart.destroy();
+            }
+
+            window.spectraChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: periods,
+                    datasets: [{
+                        label: 'Design Response Spectra (NSCP 2015)',
+                        data: accelerations,
+                        borderColor: '#3498db',
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.1,
+                        pointRadius: 0
+                    }, {
+                        label: 'Structure Periods',
+                        data: structurePeriods.map(p => ({x: p.x, y: p.y})),
+                        backgroundColor: '#e74c3c',
+                        borderColor: '#c0392b',
+                        borderWidth: 2,
+                        pointRadius: 8,
+                        pointHoverRadius: 10,
+                        showLine: false,
+                        type: 'scatter'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'NSCP 2015 Design Response Spectra',
+                            font: {
+                                size: 16,
+                                weight: 'bold'
+                            },
+                            color: '#2c3e50'
+                        },
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function(context) {
+                                    if (context[0].datasetIndex === 1) {
+                                        const pointIndex = context[0].dataIndex;
+                                        return structurePeriods[pointIndex].label + ' Period';
+                                    }
+                                    return 'Period: ' + context[0].label + ' s';
+                                },
+                                label: function(context) {
+                                    if (context.datasetIndex === 1) {
+                                        return 'Sa = ' + context.parsed.y.toFixed(3);
+                                    }
+                                    return 'Sa = ' + context.parsed.y.toFixed(3);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            title: {
+                                display: true,
+                                text: 'Period T (seconds)',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                },
+                                color: '#2c3e50'
+                            },
+                            min: 0,
+                            max: 5,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Seismic Response Acceleration Sa',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                },
+                                color: '#2c3e50'
+                            },
+                            min: 0,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        }
+                    },
+                    elements: {
+                        point: {
+                            hoverRadius: 8
+                        }
+                    }
+                }
+            });
+
+            // Add vertical reference lines for T0 and Ts
+            const chartArea = window.spectraChart.chartArea;
+            if (chartArea) {
+                const addVerticalLine = (T, label, color) => {
+                    const x = window.spectraChart.scales.x.getPixelForValue(T);
+                    window.spectraChart.ctx.save();
+                    window.spectraChart.ctx.globalCompositeOperation = 'destination-over';
+                    window.spectraChart.ctx.strokeStyle = color;
+                    window.spectraChart.ctx.lineWidth = 2;
+                    window.spectraChart.ctx.setLineDash([5, 5]);
+                    window.spectraChart.ctx.beginPath();
+                    window.spectraChart.ctx.moveTo(x, chartArea.top);
+                    window.spectraChart.ctx.lineTo(x, chartArea.bottom);
+                    window.spectraChart.ctx.stroke();
+                    window.spectraChart.ctx.restore();
+                };
+                
+                // Add reference lines
+                addVerticalLine(T0_calc, 'T₀', '#f39c12');
+                addVerticalLine(Ts_calc, 'Tₛ', '#e67e22');
+            }
+        }
+
+        // Initialize with default calculation
+        document.addEventListener('DOMContentLoaded', function() {
+            calculateParameters();
+        });
+
+        // Add event listeners for real-time updates
+        document.getElementById('seismicZone').addEventListener('change', calculateParameters);
+        document.getElementById('seismicSourceType').addEventListener('change', calculateParameters);
+        document.getElementById('distanceToFault').addEventListener('input', calculateParameters);
+        document.getElementById('soilProfileType').addEventListener('change', calculateParameters);
+        document.getElementById('importanceFactor').addEventListener('input', calculateParameters);
+        document.getElementById('responseFactorX').addEventListener('input', calculateParameters);
+        document.getElementById('responseFactorZ').addEventListener('input', calculateParameters);
+        document.getElementById('structureType').addEventListener('change', calculateParameters);
+        document.getElementById('structureHeight').addEventListener('input', calculateParameters);
+        document.getElementById('seismicDeadLoad').addEventListener('input', calculateParameters);
+        document.getElementById('periodInterval').addEventListener('input', calculateParameters);
+    </script>
+</body>
+</html>

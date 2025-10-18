@@ -14,6 +14,9 @@
 
 ---
 
+<img width="1881" height="897" alt="image" src="https://github.com/user-attachments/assets/183b966e-49e3-478d-9436-476c3a3a568c" />
+
+
 ## 🌟 Key Features
 
 ### 📊 Comprehensive Seismic Analysis
